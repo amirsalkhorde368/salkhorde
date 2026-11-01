@@ -1,174 +1,162 @@
-<!DOCTYPE html>
+
+   <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>سامانه هوشمند مدیریت مصرف آب | خوارزمی</title>
-    <!-- Tailwind CSS CDN -->
+    <title>دستیار هوشمند مدیریت مصرف آب</title>
+    <!-- اتصال به Tailwind CSS برای طراحی مدرن -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700&display=swap');
-        body {
-            font-family: 'Vazirmatn', sans-serif;
-        }
-    </style>
-
-        <!-- تنظیمات PWA -->
+    <!-- اتصال به مانیفست PWA -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0e7490">
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(() => console.log('Service Worker Registered!'))
-                    .catch((err) => console.log('SW registration failed:', err));
-            });
-        }
-    </script>
-
+    <meta name="theme-color" content="#0284c7">
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+<body class="bg-slate-50 text-slate-800 min-header flex flex-col min-h-screen">
 
     <!-- هدر سایت -->
-    <header class="bg-cyan-700 text-white shadow-md">
-        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <i class="fa-solid fa-droplet text-2xl text-cyan-300"></i>
-                <h1 class="text-lg font-bold">دستیار هوشمند مدیریت آب</h1>
-            </div>
-            <span class="text-xs bg-cyan-800 px-3 py-1 rounded-full border border-cyan-600">نسخه خوارزمی (PWA)</span>
-        </div>
+    <header class="bg-sky-600 text-white p-4 shadow-md text-center">
+        <h1 class="text-xl font-bold">دستیار هوشمند مصرف آب</h1>
+        <p class="text-xs text-sky-100 mt-1">سامانه بهینه‌سازی اقلیمی (نسخه خوارزمی)</p>
     </header>
 
-    <!-- محتوای اصلی -->
-    <main class="container mx-auto px-4 py-6 flex-grow grid grid-cols-1 md:grid-cols-3 gap-6">
+    <!-- بدنه اصلی -->
+    <main class="container mx-auto p-4 max-w-md flex-grow">
         
-        <!-- ستون سمت راست: فرم ورودی داده‌ها -->
-        <section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 md:col-span-1">
-            <h2 class="text-base font-bold text-slate-700 mb-4 flex items-center gap-2">
-                <i class="fa-solid fa-sliders text-cyan-600"></i> ثبت وضعیت مصرف
-            </h2>
-            <form id="waterForm" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1">نوع کاربربری</label>
-                    <select id="userType" class="w-full text-sm border border-slate-200 rounded-lg p-2.5 focus:ring-2 focus:ring-cyan-500 outline-none">
-                        <option value="home">خانگی (مسکونی)</option>
-                        <option value="farm">کشاورزی (گلخانه/باغ)</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1" id="inputLabel">تعداد افراد خانوار</label>
-                    <input type="number" id="consumptionInput" class="w-full text-sm border border-slate-200 rounded-lg p-2.5 focus:ring-2 focus:ring-cyan-500 outline-none" placeholder="مثلا ۴ نفر">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1">دمای هوای منطقه (°C)</label>
-                    <input type="number" id="tempInput" class="w-full text-sm border border-slate-200 rounded-lg p-2.5 focus:ring-2 focus:ring-cyan-500 outline-none" placeholder="مثلا ۳۲">
-                </div>
-                <button type="button" onclick="calculateOptimization()" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-medium text-sm py-2.5 rounded-lg transition duration-200 shadow-sm">
-                    محاسبه و تحلیل هوشمند
-                </button>
-            </form>
-        </section>
-
-        <!-- ستون‌های سمت چپ: داشبورد نتایج و توصیه‌ها -->
-        <section class="md:col-span-2 space-y-6">
-            <!-- کارت‌های آماری -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
-                    <div>
-                        <p class="text-xs text-slate-500 mb-1">برآورد مصرف روزانه</p>
-                        <h3 class="text-xl font-bold text-slate-800" id="dailyUsage">-- لیتر</h3>
-                    </div>
-                    <div class="w-12 h-12 bg-cyan-50 text-cyan-600 rounded-xl flex items-center justify-center text-xl">
-                        <i class="fa-solid fa-chart-pie"></i>
-                    </div>
-                </div>
-                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
-                    <div>
-                        <p class="text-xs text-slate-500 mb-1">وضعیت بهینگی مصرف</p>
-                        <h3 class="text-xl font-bold text-emerald-600" id="statusResult">نامشخص</h3>
-                    </div>
-                    <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center text-xl">
-                        <i class="fa-solid fa-shield-halved"></i>
-                    </div>
-                </div>
+        <!-- فرم ورودی -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 mb-6">
+            <h2 class="text-base font-semibold text-slate-700 mb-4">محاسبه‌گر هوشمند نیاز آبی</h2>
+            
+            <!-- انتخاب نوع کاربری -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-slate-600 mb-1">نوع کاربری:</label>
+                <select id="userType" class="w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 outline-none text-sm">
+                    <option value="home">خانگی (شستشو، فضای سبز منزل)</option>
+                    <option value="farm">کشاورزی (مزرعه / باغ)</option>
+                </select>
             </div>
 
-            <!-- بخش توصیه‌های هوشمند سیستم -->
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                <h2 class="text-base font-bold text-slate-700 mb-3 flex items-center gap-2">
-                    <i class="fa-solid fa-robot text-cyan-600"></i> راهکارهای بهینه‌سازی موتور هوش مصنوعی
-                </h2>
-                <div id="aiRecommendations" class="text-sm text-slate-600 bg-slate-50 p-4 rounded-xl border border-slate-100 leading-relaxed">
-                    هنوز داده‌ای ثبت نشده است. لطفاً فرم سمت راست را تکمیل کرده و دکمه محاسبه را بزنید.
-                </div>
+            <!-- دمای هوا -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-slate-600 mb-1">دمای میانگین هوا (سانتی‌گراد):</label>
+                <input type="number" id="tempInput" placeholder="مثلاً 30" class="w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 outline-none text-sm">
             </div>
-        </section>
+
+            <!-- دکمه محاسبه -->
+            <button onclick="calculateWater()" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-medium p-3 rounded-xl transition duration-200 shadow-sm text-sm">
+                محاسبه و دریافت راهکار
+            </button>
+        </div>
+
+        <!-- بخش نتیجه -->
+        <div id="resultBox" class="hidden bg-sky-50 border border-sky-100 p-4 rounded-2xl mb-6">
+            <h3 class="font-bold text-sky-800 text-sm mb-1">نتیجه تحلیل اقلیمی:</h3>
+            <p id="resultText" class="text-xs text-sky-900 leading-relaxed"></p>
+        </div>
+
+        <!-- بخش تاریخچه محاسبات ذخیره شده -->
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="text-sm font-semibold text-slate-700">تاریخچه محاسبات اخیر</h3>
+                <button onclick="clearHistory()" class="text-xs text-rose-500 hover:underline">پاک کردن تاریخچه</button>
+            </div>
+            <div id="historyList" class="space-y-2 text-xs text-slate-600">
+                <p class="text-slate-400 text-center py-2">هنوز محاسبه‌ای ذخیره نشده است.</p>
+            </div>
+        </div>
+
     </main>
 
     <!-- فوتر -->
-    <footer class="bg-white border-t border-slate-100 py-4 text-center text-xs text-slate-400">
-        سامانه جامع مدیریت مصرف آب | توسعه‌یافته برای جشنواره خوارزمی ۱۴۰۵
-    </footer>
+    <footer class="text-center p-4 text-xs text-slate-400">
+        توسعه داده شده برای ارائه در جشنواره خوارزمی
+    ></footer>
 
-    <!-- اسکریپت منطق برنامه -->
+    <!-- اسکریپت محاسبات و PWA -->
     <script>
-        // تغییر لیبل ورودی بر اساس نوع کاربربری
-        document.getElementById('userType').addEventListener('change', function() {
-            const label = document.getElementById('inputLabel');
-            if(this.value === 'home') {
-                label.innerText = 'تعداد افراد خانوار';
-                document.getElementById('consumptionInput').placeholder = 'مثلا ۴ نفر';
-            } else {
-                label.innerText = 'مساحت زمین (متر مربع)';
-                document.getElementById('consumptionInput').placeholder = 'مثلا ۱۰۰۰';
-            }
-        });
+        // ثبت Service Worker برای قابلیت PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(() => console.log('Service Worker Registered'))
+                .catch((err) => console.log('SW Failed', err));
+        }
 
-        // تابع محاسباتی و هوش تصمیم‌گیر سیستم
-        function calculateOptimization() {
+        // بارگذاری تاریخچه هنگام باز شدن صفحه
+        window.onload = function() {
+            loadHistory();
+        };
+
+        function calculateWater() {
             const userType = document.getElementById('userType').value;
-            const amount = parseFloat(document.getElementById('consumptionInput').value) || 0;
-            const temp = parseFloat(document.getElementById('tempInput').value) || 25;
+            const temp = parseFloat(document.getElementById('tempInput').value);
+            const resultBox = document.getElementById('resultBox');
+            const resultText = document.getElementById('resultText');
 
-            let estimatedLiters = 0;
-            let advice = "";
-            let status = "بهینه";
-            let statusColor = "text-emerald-600";
+            if (isNaN(temp)) {
+                alert('لطفاً دمای معتبری را وارد کنید.');
+                return;
+            }
+
+            let message = '';
+            let waterAmount = 0;
 
             if (userType === 'home') {
-                // محاسبه فرضی خانگی (سرانه هر فرد حدود ۱۵۰ لیتر در روز + ضریب دما)
-                estimatedLiters = amount * 150 * (1 + (temp > 30 ? 0.15 : 0));
-                if (estimatedLiters > 800) {
-                    status = "نیازمند اصلاح";
-                    statusColor = "text-amber-600";
-                    advice = "مصرف خانوار شما بالاتر از میانگین استاندارد است. پیشنهاد می‌شود از سرشیرهای کااهنده مصرف استفاده کنید و زمان استحمام را کاهش دهید.";
-                } else {
-                    status = "بسیار مطلوب";
-                    statusColor = "text-emerald-600";
-                    advice = "الگوی مصرف شما کاملاً استاندارد است. با توجه به دمای هوای فعلی، نیازی به تغییر خاصی نیست.";
-                }
+                waterAmount = temp > 35 ? 180 : 130;
+                message = `با توجه به دمای ${temp}°C و کاربری خانگی، مصرف بهینه روزانه حدود ${waterAmount} لیتر تخمین زده می‌شود. پیشنهاد: استفاده از سرشیرهای کاهنده جریان و آبیاری باغچه در ساعات پایانی روز.`;
             } else {
-                // محاسبه فرضی کشاورزی (هر مترمربع صیفی‌جات/باغ حدود ۵ لیتر در روز + ضریب خشکی هوا)
-                estimatedLiters = amount * 5 * (1 + (temp > 30 ? 0.3 : 0));
-                if (temp > 35) {
-                    status = "خطر تنش آبی";
-                    statusColor = "text-rose-600";
-                    advice = "با توجه به دمای بالای ۳۵ درجه، آبیاری باید حتماً به ساعات پایانی شب یا بامداد منتقل شود تا تبخیر سطحی به حداقل برسد.";
-                } else {
-                    status = "نرمال";
-                    statusColor = "text-emerald-600";
-                    advice = "سیستم قطره‌ای و زمان‌بندی فعلی برای زمین شما مناسب ارزیابی شد.";
-                }
+                waterAmount = temp > 35 ? 7000 : 4500;
+                message = `با توجه به دمای ${temp}°C و کاربری کشاورزی، نیاز آبی هر هکتار حدود ${waterAmount} لیتر در روز است. پیشنهاد: استفاده از سیستم آبیاری قطره‌ای و جلوگیری از تبخیر سطحی.`;
             }
 
-            document.getElementById('dailyUsage').innerText = estimatedLiters.toLocaleString() + ' لیتر';
-            const statusEl = document.getElementById('statusResult');
-            statusEl.innerText = status;
-            statusEl.className = `text-xl font-bold ${statusColor}`;
-            document.getElementById('aiRecommendations').innerText = advice;
+            // نمایش نتیجه
+            resultBox.classList.remove('hidden');
+            resultText.innerText = message;
+
+            // ذخیره در LocalStorage
+            saveToHistory(userType === 'home' ? 'خانگی' : 'کشاورزی', temp, waterAmount);
+        }
+
+        function saveToHistory(type, temp, amount) {
+            let history = JSON.parse(localStorage.getItem('waterHistory')) || [];
+            const newRecord = {
+                type: type,
+                temp: temp,
+                amount: amount,
+                date: new Date().toLocaleDateString('fa-IR')
+            };
+
+            history.unshift(newRecord); // اضافه کردن به ابتدای آرایه
+            if (history.length > 5) history.pop(); // نگه داشتن فقط ۵ مورد آخر
+
+            localStorage.setItem('waterHistory', JSON.stringify(history));
+            loadHistory();
+        }
+
+        function loadHistory() {
+            const historyList = document.getElementById('historyList');
+            let history = JSON.parse(localStorage.getItem('waterHistory')) || [];
+
+            if (history.length === 0) {
+                historyList.innerHTML = '<p class="text-slate-400 text-center py-2">هنوز محاسبه‌ای ذخیره نشده است.</p>';
+                return;
+            }
+
+            historyList.innerHTML = '';
+            history.forEach(item => {
+                let div = document.createElement('div');
+                div.className = 'p-2.5 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center';
+                div.innerHTML = `
+                    <span>کاربری ${item.type} (دما: ${item.temp}°C)</span>
+                    <span class="font-bold text-sky-600">${item.amount} لیتر</span>
+                `;
+                historyList.appendChild(div);
+            });
+        }
+
+        function clearHistory() {
+            localStorage.removeItem('waterHistory');
+            loadHistory();
         }
     </script>
 </body>
 </html>
+        
