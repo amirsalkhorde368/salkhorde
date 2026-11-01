@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سامانه هوشمند مدیریت مصرف آب | خوارزمی</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700&display=swap');
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+        }
+    </style>
+
+        <!-- تنظیمات PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0e7490">
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(() => console.log('Service Worker Registered!'))
+                    .catch((err) => console.log('SW registration failed:', err));
+            });
+        }
+    </script>
+
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- هدر سایت -->
+    <header class="bg-cyan-700 text-white shadow-md">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-droplet text-2xl text-cyan-300"></i>
+                <h1 class="text-lg font-bold">دستیار هوشمند مدیریت آب</h1>
+            </div>
+            <span class="text-xs bg-cyan-800 px-3 py-1 rounded-full border border-cyan-600">نسخه خوارزمی (PWA)</span>
+        </div>
+    </header>
+
+    <!-- محتوای اصلی -->
+    <main class="container mx-auto px-4 py-6 flex-grow grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <!-- ستون سمت راست: فرم ورودی داده‌ها -->
+        <section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 md:col-span-1">
+            <h2 class="text-base font-bold text-slate-700 mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-sliders text-cyan-600"></i> ثبت وضعیت مصرف
+            </h2>
+            <form id="waterForm" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">نوع کاربربری</label>
+                    <select id="userType" class="w-full text-sm border border-slate-200 rounded-lg p-2.5 focus:ring-2 focus:ring-cyan-500 outline-none">
+                        <option value="home">خانگی (مسکونی)</option>
+                        <option value="farm">کشاورزی (گلخانه/باغ)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1" id="inputLabel">تعداد افراد خانوار</label>
+                    <input type="number" id="consumptionInput" class="w-full text-sm border border-slate-200 rounded-lg p-2.5 focus:ring-2 focus:ring-cyan-500 outline-none" placeholder="مثلا ۴ نفر">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">دمای هوای منطقه (°C)</label>
+                    <input type="number" id="tempInput" class="w-full text-sm border border-slate-200 rounded-lg p-2.5 focus:ring-2 focus:ring-cyan-500 outline-none" placeholder="مثلا ۳۲">
+                </div>
+                <button type="button" onclick="calculateOptimization()" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-medium text-sm py-2.5 rounded-lg transition duration-200 shadow-sm">
+                    محاسبه و تحلیل هوشمند
+                </button>
+            </form>
+        </section>
+
+        <!-- ستون‌های سمت چپ: داشبورد نتایج و توصیه‌ها -->
+        <section class="md:col-span-2 space-y-6">
+            <!-- کارت‌های آماری -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-slate-500 mb-1">برآورد مصرف روزانه</p>
+                        <h3 class="text-xl font-bold text-slate-800" id="dailyUsage">-- لیتر</h3>
+                    </div>
+                    <div class="w-12 h-12 bg-cyan-50 text-cyan-600 rounded-xl flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-chart-pie"></i>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-slate-500 mb-1">وضعیت بهینگی مصرف</p>
+                        <h3 class="text-xl font-bold text-emerald-600" id="statusResult">نامشخص</h3>
+                    </div>
+                    <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- بخش توصیه‌های هوشمند سیستم -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <h2 class="text-base font-bold text-slate-700 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-robot text-cyan-600"></i> راهکارهای بهینه‌سازی موتور هوش مصنوعی
+                </h2>
+                <div id="aiRecommendations" class="text-sm text-slate-600 bg-slate-50 p-4 rounded-xl border border-slate-100 leading-relaxed">
+                    هنوز داده‌ای ثبت نشده است. لطفاً فرم سمت راست را تکمیل کرده و دکمه محاسبه را بزنید.
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- فوتر -->
+    <footer class="bg-white border-t border-slate-100 py-4 text-center text-xs text-slate-400">
+        سامانه جامع مدیریت مصرف آب | توسعه‌یافته برای جشنواره خوارزمی ۱۴۰۵
+    </footer>
+
+    <!-- اسکریپت منطق برنامه -->
+    <script>
+        // تغییر لیبل ورودی بر اساس نوع کاربربری
+        document.getElementById('userType').addEventListener('change', function() {
+            const label = document.getElementById('inputLabel');
+            if(this.value === 'home') {
+                label.innerText = 'تعداد افراد خانوار';
+                document.getElementById('consumptionInput').placeholder = 'مثلا ۴ نفر';
+            } else {
+                label.innerText = 'مساحت زمین (متر مربع)';
+                document.getElementById('consumptionInput').placeholder = 'مثلا ۱۰۰۰';
+            }
+        });
+
+        // تابع محاسباتی و هوش تصمیم‌گیر سیستم
+        function calculateOptimization() {
+            const userType = document.getElementById('userType').value;
+            const amount = parseFloat(document.getElementById('consumptionInput').value) || 0;
+            const temp = parseFloat(document.getElementById('tempInput').value) || 25;
+
+            let estimatedLiters = 0;
+            let advice = "";
+            let status = "بهینه";
+            let statusColor = "text-emerald-600";
+
+            if (userType === 'home') {
+                // محاسبه فرضی خانگی (سرانه هر فرد حدود ۱۵۰ لیتر در روز + ضریب دما)
+                estimatedLiters = amount * 150 * (1 + (temp > 30 ? 0.15 : 0));
+                if (estimatedLiters > 800) {
+                    status = "نیازمند اصلاح";
+                    statusColor = "text-amber-600";
+                    advice = "مصرف خانوار شما بالاتر از میانگین استاندارد است. پیشنهاد می‌شود از سرشیرهای کااهنده مصرف استفاده کنید و زمان استحمام را کاهش دهید.";
+                } else {
+                    status = "بسیار مطلوب";
+                    statusColor = "text-emerald-600";
+                    advice = "الگوی مصرف شما کاملاً استاندارد است. با توجه به دمای هوای فعلی، نیازی به تغییر خاصی نیست.";
+                }
+            } else {
+                // محاسبه فرضی کشاورزی (هر مترمربع صیفی‌جات/باغ حدود ۵ لیتر در روز + ضریب خشکی هوا)
+                estimatedLiters = amount * 5 * (1 + (temp > 30 ? 0.3 : 0));
+                if (temp > 35) {
+                    status = "خطر تنش آبی";
+                    statusColor = "text-rose-600";
+                    advice = "با توجه به دمای بالای ۳۵ درجه، آبیاری باید حتماً به ساعات پایانی شب یا بامداد منتقل شود تا تبخیر سطحی به حداقل برسد.";
+                } else {
+                    status = "نرمال";
+                    statusColor = "text-emerald-600";
+                    advice = "سیستم قطره‌ای و زمان‌بندی فعلی برای زمین شما مناسب ارزیابی شد.";
+                }
+            }
+
+            document.getElementById('dailyUsage').innerText = estimatedLiters.toLocaleString() + ' لیتر';
+            const statusEl = document.getElementById('statusResult');
+            statusEl.innerText = status;
+            statusEl.className = `text-xl font-bold ${statusColor}`;
+            document.getElementById('aiRecommendations').innerText = advice;
+        }
+    </script>
+</body>
+</html>
